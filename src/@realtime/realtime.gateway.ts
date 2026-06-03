@@ -47,4 +47,8 @@ export class RealtimeGateway {
   emitChampionCrowned(eventId: string, payload: any) {
     this.server.to(eventId).emit('champion:crowned', payload);
   }
+
+  emitToEvent(eventId: string, eventName: string, payload: any) {
+    this.server.to(eventId).emit(eventName, payload);
+  }
 }

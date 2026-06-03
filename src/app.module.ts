@@ -7,6 +7,7 @@ import { ParticipantsModule } from './modules/participants/participants.module';
 import { BattlesModule } from './modules/battles/battle.module';
 import { EventsModule } from './modules/events/event.module';
 import { VotesModule } from './modules/votes/votes.module';
+import { QualifiersModule } from './modules/qualifiers/qualifiers.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { VotesModule } from './modules/votes/votes.module';
     JudgesModule,
     BattlesModule,
     VotesModule,
+    QualifiersModule
   ],
   providers: [RealtimeGateway],
 })
