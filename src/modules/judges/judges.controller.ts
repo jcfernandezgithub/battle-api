@@ -1,5 +1,4 @@
-// src/judges/judges.controller.ts
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { JudgesService } from './judges.service';
 
 @Controller('events/:eventId/judges')
@@ -14,5 +13,22 @@ export class JudgesController {
   @Get()
   findByEvent(@Param('eventId') eventId: string) {
     return this.judgesService.findByEvent(eventId);
+  }
+
+  @Patch(':judgeId')
+  update(
+    @Param('eventId') eventId: string,
+    @Param('judgeId') judgeId: string,
+    @Body() body: { name: string },
+  ) {
+    return this.judgesService.update(eventId, judgeId, body);
+  }
+
+  @Delete(':judgeId')
+  remove(
+    @Param('eventId') eventId: string,
+    @Param('judgeId') judgeId: string,
+  ) {
+    return this.judgesService.remove(eventId, judgeId);
   }
 }
