@@ -1,5 +1,4 @@
-// src/participants/participants.controller.ts
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ParticipantsService } from './participants.service';
 
 @Controller('events/:eventId/participants')
@@ -17,5 +16,22 @@ export class ParticipantsController {
   @Get()
   findByEvent(@Param('eventId') eventId: string) {
     return this.participantsService.findByEvent(eventId);
+  }
+
+  @Patch(':participantId')
+  update(
+    @Param('eventId') eventId: string,
+    @Param('participantId') participantId: string,
+    @Body() body: { aka?: string; crew?: string; seed?: number },
+  ) {
+    return this.participantsService.update(eventId, participantId, body);
+  }
+
+  @Delete(':participantId')
+  remove(
+    @Param('eventId') eventId: string,
+    @Param('participantId') participantId: string,
+  ) {
+    return this.participantsService.remove(eventId, participantId);
   }
 }
