@@ -9,7 +9,7 @@ export class BattlesService {
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: any,
     private readonly realtimeGateway: RealtimeGateway,
-  ) {}
+  ) { }
 
   private getRoundPriority(round: string): number {
     const order: Record<string, number> = {
@@ -80,19 +80,118 @@ export class BattlesService {
   }
 
   async generateFixture(eventId: string) {
-    const { data: participants, error } = await this.supabase
-      .from('participants')
-      .select('*')
-      .eq('event_id', eventId);
+    let participants: any[] = [];
 
-    if (error) throw new Error(error.message);
+    const { data: qualifierSession, error: qualifierSessionError } =
+      await this.supabase
+        .from('qualifier_sessions')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('status', 'closed')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (qualifierSessionError) {
+      throw new Error(qualifierSessionError.message);
+    }
+
+    if (qualifierSession) {
+      const { data: qualifierVotes, error: qualifierVotesError } =
+        await this.supabase
+          .from('qualifier_votes')
+          .select(`
+          participant_id,
+          score,
+          participants (
+            id,
+            aka,
+            crew,
+            event_id
+          )
+        `)
+          .eq('session_id', qualifierSession.id);
+
+      if (qualifierVotesError) {
+        throw new Error(qualifierVotesError.message);
+      }
+
+      const rankingMap = new Map<string, any>();
+
+      for (const vote of qualifierVotes ?? []) {
+        const participant = Array.isArray(vote.participants)
+          ? vote.participants[0]
+          : vote.participants;
+
+        if (!participant) continue;
+
+        if (!rankingMap.has(vote.participant_id)) {
+          rankingMap.set(vote.participant_id, {
+            participant,
+            totalScore: 0,
+            votes: 0,
+            strongPicks: 0,
+            picks: 0,
+            noPicks: 0,
+          });
+        }
+
+        const item = rankingMap.get(vote.participant_id);
+
+        item.totalScore += vote.score;
+        item.votes += 1;
+
+        if (vote.score === 2) item.strongPicks += 1;
+        if (vote.score === 1) item.picks += 1;
+        if (vote.score === 0) item.noPicks += 1;
+      }
+
+      const ranking = Array.from(rankingMap.values()).sort((a, b) => {
+        if (b.totalScore !== a.totalScore) {
+          return b.totalScore - a.totalScore;
+        }
+
+        if (b.strongPicks !== a.strongPicks) {
+          return b.strongPicks - a.strongPicks;
+        }
+
+        if (b.picks !== a.picks) {
+          return b.picks - a.picks;
+        }
+
+        return a.participant?.aka?.localeCompare(b.participant?.aka ?? '') ?? 0;
+      });
+
+      const targetSize = qualifierSession.target_size ?? 32;
+
+      if (ranking.length < targetSize) {
+        throw new Error(
+          `La clasificatoria tiene ${ranking.length} participantes con votos. Se necesitan ${targetSize}.`,
+        );
+      }
+
+      participants = ranking
+        .slice(0, targetSize)
+        .map(item => item.participant);
+    } else {
+      const { data, error } = await this.supabase
+        .from('participants')
+        .select('*')
+        .eq('event_id', eventId);
+
+      if (error) throw new Error(error.message);
+
+      participants = data ?? [];
+    }
 
     if (!participants || participants.length < 2) {
       throw new Error('Necesitás al menos 2 participantes');
     }
 
     if (![2, 4, 8, 16, 32].includes(participants.length)) {
-      throw new Error('Por ahora el fixture acepta 2, 4, 8, 16 o 32 participantes');
+      throw new Error(
+        `Cantidad inválida para fixture: ${participants.length}. Usá 2, 4, 8, 16 o 32 participantes, o cerrá una clasificatoria para generar Top 32.`,
+      );
     }
 
     const { data: existingBattles, error: existingBattlesError } =
