@@ -21,11 +21,14 @@ export class EventsController {
     return this.eventsService.getLiveState(eventId);
   }
 
-  @Post('events/:eventId/screen-mode')
+  @Post(':eventId/screen-mode')
   setScreenMode(
     @Param('eventId') eventId: string,
     @Body() body: { mode: string },
   ) {
-    return this.eventsService.setScreenMode(eventId, body.mode);
+    return this.eventsService.setScreenMode(
+      eventId,
+      body.mode,
+    );
   }
 }
