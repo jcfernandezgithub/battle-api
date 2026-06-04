@@ -1,10 +1,14 @@
 // src/events/events.service.ts
 import { Inject, Injectable } from '@nestjs/common';
+import { RealtimeGateway } from 'src/@realtime/realtime.gateway';
 import { SUPABASE_CLIENT } from 'src/@supabase/supabase.provider';
 
 @Injectable()
 export class EventsService {
-  constructor(@Inject(SUPABASE_CLIENT) private readonly supabase: any) { }
+  constructor(
+    @Inject(SUPABASE_CLIENT) private readonly supabase: any,
+    private readonly realtimeGateway: RealtimeGateway
+  ) { }
 
   async create(name: string) {
     const { data, error } = await this.supabase
@@ -94,5 +98,28 @@ export class EventsService {
       fixture,
       voteSummary,
     };
+  }
+
+  async setScreenMode(eventId: string, mode: string) {
+    const allowed = ['auto', 'battle', 'fixture', 'qualifier', 'ranking', 'blank'];
+
+    if (!allowed.includes(mode)) {
+      throw new Error('Modo de pantalla inválido');
+    }
+
+    const { data, error } = await this.supabase
+      .from('events')
+      .update({ screen_mode: mode })
+      .eq('id', eventId)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    this.realtimeGateway.emitToEvent(eventId, 'screen:mode', {
+      mode,
+    });
+
+    return data;
   }
 }
