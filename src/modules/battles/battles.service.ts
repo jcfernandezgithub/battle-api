@@ -79,7 +79,7 @@ export class BattlesService {
     return result;
   }
 
-  async generateFixture(eventId: string) {
+  async generateFixture(eventId: string, targetSize?: number) {
     let participants: any[] = [];
 
     const { data: qualifierSession, error: qualifierSessionError } =
@@ -162,11 +162,16 @@ export class BattlesService {
         return a.participant?.aka?.localeCompare(b.participant?.aka ?? '') ?? 0;
       });
 
-      const targetSize = qualifierSession.target_size ?? 32;
+      const requestedTargetSize = targetSize ?? qualifierSession.target_size ?? 32;
 
-      if (ranking.length < targetSize) {
+      if (![2, 4, 8, 16, 32].includes(requestedTargetSize)) {
         throw new Error(
-          `La clasificatoria tiene ${ranking.length} participantes con votos. Se necesitan ${targetSize}.`,
+          `Top inválido: ${requestedTargetSize}. Usá 2, 4, 8, 16 o 32.`,
+        );
+      }
+      if (ranking.length < requestedTargetSize) {
+        throw new Error(
+          `La clasificatoria tiene ${ranking.length} participantes con votos. Se necesitan ${requestedTargetSize}.`,
         );
       }
 

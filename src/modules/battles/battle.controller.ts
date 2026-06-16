@@ -1,14 +1,17 @@
-// src/battles/battles.controller.ts
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { BattlesService } from './battles.service';
+import { GenerateFixtureDto } from './dto/generate-fixture.dto';
 
 @Controller()
 export class BattlesController {
   constructor(private readonly battlesService: BattlesService) {}
 
   @Post('events/:eventId/generate-fixture')
-  generateFixture(@Param('eventId') eventId: string) {
-    return this.battlesService.generateFixture(eventId);
+  generateFixture(
+    @Param('eventId') eventId: string,
+    @Body() dto: GenerateFixtureDto,
+  ) {
+    return this.battlesService.generateFixture(eventId, dto.targetSize);
   }
 
   @Get('events/:eventId/battles')
