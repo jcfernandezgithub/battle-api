@@ -153,14 +153,19 @@ export class QualifiersService {
     const { data, error } = await this.supabase
       .from('qualifier_votes')
       .select(`
-        participant_id,
-        score,
-        participants (
-          id,
-          aka,
-          crew
-        )
-      `)
+    participant_id,
+    judge_id,
+    score,
+    participants (
+      id,
+      aka,
+      crew
+    ),
+    judges (
+      id,
+      is_head_judge
+    )
+  `)
       .eq('session_id', session.id);
 
     if (error) {
@@ -182,6 +187,7 @@ export class QualifiersService {
           strongPicks: 0,
           picks: 0,
           noPicks: 0,
+          headJudgeScore: null,
         });
       }
 
@@ -193,6 +199,14 @@ export class QualifiersService {
       if (vote.score === 2) item.strongPicks += 1;
       if (vote.score === 1) item.picks += 1;
       if (vote.score === 0) item.noPicks += 1;
+
+      const judge = Array.isArray(vote.judges)
+        ? vote.judges[0]
+        : vote.judges;
+
+      if (judge?.is_head_judge) {
+        item.headJudgeScore = vote.score;
+      }
     }
 
     return Array.from(rankingMap.values()).sort((a, b) => {
@@ -206,6 +220,17 @@ export class QualifiersService {
 
       if (b.picks !== a.picks) {
         return b.picks - a.picks;
+      }
+
+      if (a.noPicks !== b.noPicks) {
+        return a.noPicks - b.noPicks;
+      }
+
+      const aHeadJudgeScore = a.headJudgeScore ?? -1;
+      const bHeadJudgeScore = b.headJudgeScore ?? -1;
+
+      if (bHeadJudgeScore !== aHeadJudgeScore) {
+        return bHeadJudgeScore - aHeadJudgeScore;
       }
 
       return a.participant?.aka?.localeCompare(b.participant?.aka ?? '') ?? 0;

@@ -147,18 +147,27 @@ export class BattlesService {
       }
 
       const ranking = Array.from(rankingMap.values()).sort((a, b) => {
+        // 1. Mayor puntaje total
         if (b.totalScore !== a.totalScore) {
           return b.totalScore - a.totalScore;
         }
 
+        // 2. Mayor cantidad de strong picks
         if (b.strongPicks !== a.strongPicks) {
           return b.strongPicks - a.strongPicks;
         }
 
+        // 3. Mayor cantidad de picks
         if (b.picks !== a.picks) {
           return b.picks - a.picks;
         }
 
+        // 4. Menor cantidad de no picks
+        if (a.noPicks !== b.noPicks) {
+          return a.noPicks - b.noPicks;
+        }
+
+        // 5. Último fallback técnico para que no explote el orden
         return a.participant?.aka?.localeCompare(b.participant?.aka ?? '') ?? 0;
       });
 
@@ -169,6 +178,7 @@ export class BattlesService {
           `Top inválido: ${requestedTargetSize}. Usá 2, 4, 8, 16 o 32.`,
         );
       }
+
       if (ranking.length < requestedTargetSize) {
         throw new Error(
           `La clasificatoria tiene ${ranking.length} participantes con votos. Se necesitan ${requestedTargetSize}.`,
