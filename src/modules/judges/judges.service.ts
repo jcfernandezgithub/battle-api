@@ -3,9 +3,9 @@ import { SUPABASE_CLIENT } from 'src/@supabase/supabase.provider';
 
 @Injectable()
 export class JudgesService {
-  constructor(@Inject(SUPABASE_CLIENT) private readonly supabase: any) {}
+  constructor(@Inject(SUPABASE_CLIENT) private readonly supabase: any) { }
 
-  async create(eventId: string, body: { name: string }) {
+  async create(eventId: string, body: { name: string; isHeadJudge?: boolean; }) {
     if (!body.name?.trim()) {
       throw new BadRequestException('El nombre del juez es requerido');
     }
@@ -18,6 +18,7 @@ export class JudgesService {
         event_id: eventId,
         name: body.name.trim(),
         access_code: accessCode,
+        is_head_judge: !!body.isHeadJudge,
       })
       .select()
       .single();
@@ -37,15 +38,32 @@ export class JudgesService {
     return data;
   }
 
-  async update(eventId: string, judgeId: string, body: { name: string }) {
+  async update(
+    eventId: string,
+    judgeId: string,
+    body: {
+      name: string;
+      isHeadJudge?: boolean;
+    },
+  ) {
     if (!body.name?.trim()) {
       throw new BadRequestException('El nombre del juez es requerido');
+    }
+
+    if (body.isHeadJudge) {
+      const { error: resetError } = await this.supabase
+        .from('judges')
+        .update({ is_head_judge: false })
+        .eq('event_id', eventId);
+
+      if (resetError) throw new Error(resetError.message);
     }
 
     const { data, error } = await this.supabase
       .from('judges')
       .update({
         name: body.name.trim(),
+        is_head_judge: !!body.isHeadJudge,
       })
       .eq('id', judgeId)
       .eq('event_id', eventId)

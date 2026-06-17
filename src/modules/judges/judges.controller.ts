@@ -3,10 +3,10 @@ import { JudgesService } from './judges.service';
 
 @Controller('events/:eventId/judges')
 export class JudgesController {
-  constructor(private readonly judgesService: JudgesService) {}
+  constructor(private readonly judgesService: JudgesService) { }
 
   @Post()
-  create(@Param('eventId') eventId: string, @Body() body: { name: string }) {
+  create(@Param('eventId') eventId: string, @Body() body: { name: string, isHeadJudge?: boolean; }) {
     return this.judgesService.create(eventId, body);
   }
 
