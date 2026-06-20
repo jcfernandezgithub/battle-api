@@ -374,6 +374,9 @@ export class QualifiersService {
 
   async getNextToQualify(eventId: string) {
     const session = await this.getLastSession(eventId);
+    // Asumo que tu objeto 'session' tiene el 'current_participant_id' guardado 
+    // que representa al competidor que está ahora mismo en la tarima.
+    const currentParticipantId = session?.current_participant_id;
 
     const { data: participants, error: participantsError } = await this.supabase
       .from('participants')
@@ -395,12 +398,18 @@ export class QualifiersService {
       throw new BadRequestException(votesError.message);
     }
 
+    // 1. Guardamos los IDs de los que YA fueron votados (Pasado)
     const votedParticipantIds = new Set(
       (votes ?? []).map(vote => vote.participant_id),
     );
 
+    // 2. El siguiente será el primero que:
+    //    - NO haya sido votado todavía (no está en votedParticipantIds)
+    //    - Y TAMPOCO sea el que está compitiendo ahora mismo (currentParticipantId)
     const nextParticipant = (participants ?? []).find(
-      participant => !votedParticipantIds.has(participant.id),
+      participant =>
+        !votedParticipantIds.has(participant.id) &&
+        participant.id !== currentParticipantId
     );
 
     return {
