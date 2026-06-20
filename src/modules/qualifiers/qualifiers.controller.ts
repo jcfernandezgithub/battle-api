@@ -6,9 +6,9 @@ import { QualifierVoteDto } from './qualifiers.types';
 export class QualifiersController {
   constructor(private readonly qualifiersService: QualifiersService) { }
 
-  @Post('start')
-  start(@Param('eventId') eventId: string) {
-    return this.qualifiersService.startQualifier(eventId);
+  @Get('next') // <-- Muévelo aquí arriba
+  getNextToQualify(@Param('eventId') eventId: string) {
+    return this.qualifiersService.getNextToQualify(eventId);
   }
 
   @Get('state')
@@ -19,6 +19,21 @@ export class QualifiersController {
   @Get('active')
   getActive(@Param('eventId') eventId: string) {
     return this.qualifiersService.getActiveQualifier(eventId);
+  }
+
+  @Get('ranking')
+  getRanking(@Param('eventId') eventId: string) {
+    return this.qualifiersService.getRanking(eventId);
+  }
+
+  @Get('top-32')
+  getTop32(@Param('eventId') eventId: string) {
+    return this.qualifiersService.getTop32(eventId);
+  }
+
+  @Post('start')
+  start(@Param('eventId') eventId: string) {
+    return this.qualifiersService.startQualifier(eventId);
   }
 
   @Post('current/:participantId')
@@ -37,22 +52,8 @@ export class QualifiersController {
     return this.qualifiersService.vote(eventId, dto);
   }
 
-  @Get('ranking')
-  getRanking(@Param('eventId') eventId: string) {
-    return this.qualifiersService.getRanking(eventId);
-  }
-
-  @Get('top-32')
-  getTop32(@Param('eventId') eventId: string) {
-    return this.qualifiersService.getTop32(eventId);
-  }
-
   @Post('close')
   close(@Param('eventId') eventId: string) {
     return this.qualifiersService.closeQualifier(eventId);
-  }
- @Get('next')
-  getNextToQualify(@Param('eventId') eventId: string) {
-    return this.qualifiersService.getNextToQualify(eventId);
   }
 }
