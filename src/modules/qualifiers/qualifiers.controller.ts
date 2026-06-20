@@ -4,7 +4,7 @@ import { QualifierVoteDto } from './qualifiers.types';
 
 @Controller('events/:eventId/qualifier')
 export class QualifiersController {
-  constructor(private readonly qualifiersService: QualifiersService) {}
+  constructor(private readonly qualifiersService: QualifiersService) { }
 
   @Post('start')
   start(@Param('eventId') eventId: string) {
@@ -50,5 +50,9 @@ export class QualifiersController {
   @Post('close')
   close(@Param('eventId') eventId: string) {
     return this.qualifiersService.closeQualifier(eventId);
+  }
+
+  getNextToQualify(@Param('eventId') eventId: string) {
+    return this.qualifiersService.getNextToQualify(eventId);
   }
 }

@@ -371,4 +371,40 @@ export class QualifiersService {
       .slice(0, targetSize)
       .map(item => item.participant);
   }
+
+  async getNextToQualify(eventId: string) {
+    const session = await this.getLastSession(eventId);
+
+    const { data: participants, error: participantsError } = await this.supabase
+      .from('participants')
+      .select('id, aka, crew, seed')
+      .eq('event_id', eventId)
+      .order('seed', { ascending: true });
+
+    if (participantsError) {
+      throw new BadRequestException(participantsError.message);
+    }
+
+    const { data: votes, error: votesError } = await this.supabase
+      .from('qualifier_votes')
+      .select('participant_id')
+      .eq('session_id', session.id)
+      .eq('event_id', eventId);
+
+    if (votesError) {
+      throw new BadRequestException(votesError.message);
+    }
+
+    const votedParticipantIds = new Set(
+      (votes ?? []).map(vote => vote.participant_id),
+    );
+
+    const nextParticipant = (participants ?? []).find(
+      participant => !votedParticipantIds.has(participant.id),
+    );
+
+    return {
+      participant: nextParticipant ?? null,
+    };
+  }
 }
