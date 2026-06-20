@@ -374,10 +374,8 @@ export class QualifiersService {
 
   async getNextToQualify(eventId: string) {
     const session = await this.getLastSession(eventId);
-    // Asumo que tu objeto 'session' tiene el 'current_participant_id' guardado 
-    // que representa al competidor que está ahora mismo en la tarima.
-    const currentParticipantId = session?.current_participant_id;
 
+    // 1. Traemos todos los participantes ordenados por su orden de salida (seed)
     const { data: participants, error: participantsError } = await this.supabase
       .from('participants')
       .select('id, aka, crew, seed')
@@ -388,6 +386,7 @@ export class QualifiersService {
       throw new BadRequestException(participantsError.message);
     }
 
+    // 2. Traemos los votos para ver quiénes ya pasaron
     const { data: votes, error: votesError } = await this.supabase
       .from('qualifier_votes')
       .select('participant_id')
@@ -398,19 +397,22 @@ export class QualifiersService {
       throw new BadRequestException(votesError.message);
     }
 
-    // 1. Guardamos los IDs de los que YA fueron votados (Pasado)
     const votedParticipantIds = new Set(
       (votes ?? []).map(vote => vote.participant_id),
     );
 
-    // 2. El siguiente será el primero que:
-    //    - NO haya sido votado todavía (no está en votedParticipantIds)
-    //    - Y TAMPOCO sea el que está compitiendo ahora mismo (currentParticipantId)
-    const nextParticipant = (participants ?? []).find(
-      participant =>
-        !votedParticipantIds.has(participant.id) &&
-        participant.id !== currentParticipantId
+    const participantList = participants ?? [];
+
+    // 3. Encontramos al participante ACTUAL (el primero de la lista que NO tiene votos)
+    const currentParticipantIndex = participantList.findIndex(
+      participant => !votedParticipantIds.has(participant.id),
     );
+
+    // 4. El SIGUIENTE es simplemente el que está en la posición de la lista (Actual + 1)
+    let nextParticipant = null;
+    if (currentParticipantIndex !== -1 && currentParticipantIndex + 1 < participantList.length) {
+      nextParticipant = participantList[currentParticipantIndex + 1];
+    }
 
     return {
       participant: nextParticipant ?? null,
