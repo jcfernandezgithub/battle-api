@@ -51,7 +51,7 @@ export class QualifiersController {
   close(@Param('eventId') eventId: string) {
     return this.qualifiersService.closeQualifier(eventId);
   }
-
+ @Post('next')
   getNextToQualify(@Param('eventId') eventId: string) {
     return this.qualifiersService.getNextToQualify(eventId);
   }
