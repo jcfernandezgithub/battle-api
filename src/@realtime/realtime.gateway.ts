@@ -37,12 +37,14 @@ export class RealtimeGateway {
   }
 
   emitVoteReceived(eventId: string, payload: any) {
-    this.server.to(eventId).emit('vote:received', {
-      totalVotes: payload.totalVotes,
-      countA: payload.countA,
-      countB: payload.countB,
-      votedJudgeIds: payload.votedJudgeIds,
-    });
+    console.log(
+      '[GATEWAY] emitVoteReceived:',
+      JSON.stringify(payload, null, 2),
+    );
+
+    this.server
+      .to(eventId)
+      .emit('vote:received', payload);
   }
 
   emitBattleClosed(eventId: string, payload: any) {
