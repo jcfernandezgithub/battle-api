@@ -59,6 +59,8 @@ export class VotesService {
 
     const summary = await this.getBattleVoteSummary(battleId);
 
+    console.log('[VOTES] Vote summary:', summary);
+
     this.realtimeGateway.emitVoteReceived(battle.event_id, {
       battleId,
       judgeId: body.judgeId,
@@ -92,18 +94,44 @@ export class VotesService {
   private async getBattleVoteSummary(battleId: string) {
     const { data, error } = await this.supabase
       .from('votes')
-      .select('*')
+      .select('judge_id, winner_side')
       .eq('battle_id', battleId);
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      throw new Error(error.message);
+    }
 
-    const countA = data.filter((v) => v.winner_side === 'A').length;
-    const countB = data.filter((v) => v.winner_side === 'B').length;
+    const votes = data ?? [];
 
-    return {
-      totalVotes: data.length,
+    const countA = votes.filter(
+      vote => vote.winner_side === 'A',
+    ).length;
+
+    const countB = votes.filter(
+      vote => vote.winner_side === 'B',
+    ).length;
+
+    const votedJudgeIds = [
+      ...new Set(
+        votes
+          .map(vote => vote.judge_id)
+          .filter((judgeId): judgeId is string => Boolean(judgeId))
+          .map(String),
+      ),
+    ];
+
+    const summary = {
+      totalVotes: votedJudgeIds.length,
       countA,
       countB,
+      votedJudgeIds,
     };
+
+    console.log(
+      '[VOTE SUMMARY GENERATED]',
+      JSON.stringify(summary, null, 2),
+    );
+
+    return summary;
   }
 }
