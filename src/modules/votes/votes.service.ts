@@ -59,6 +59,11 @@ export class VotesService {
 
     const summary = await this.getBattleVoteSummary(battleId);
 
+    console.log(
+      '[SERVICE SUMMARY BEFORE GATEWAY]',
+      JSON.stringify(summary, null, 2),
+    );
+
     console.log('[VOTES] Vote summary:', summary);
 
     this.realtimeGateway.emitVoteReceived(battle.event_id, {
